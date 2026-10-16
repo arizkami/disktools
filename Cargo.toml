@@ -1,0 +1,27 @@
+[package]
+name = "disktools"
+version = "0.1.0"
+edition = "2024"
+description = "Disk benchmark and S.M.A.R.T. health viewer (CrystalDiskMark / CrystalDiskInfo style) built with egui"
+
+[dependencies]
+eframe = "0.37"
+egui_extras = "0.37"
+lucide-icons = "1.57"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+    "Win32_System_IO",
+    "Win32_System_Ioctl",
+    "Win32_System_Threading",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+strip = true
