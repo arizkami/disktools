@@ -29,6 +29,8 @@ pub struct Palette {
     pub good: Color32,
     pub caution: Color32,
     pub bad: Color32,
+    /// Second chart series (access time).
+    pub info: Color32,
 }
 
 const DARK: Palette = Palette {
@@ -45,6 +47,7 @@ const DARK: Palette = Palette {
     good: Color32::from_rgb(0x34, 0xBE, 0x82),
     caution: Color32::from_rgb(0xE0, 0xA6, 0x3C),
     bad: Color32::from_rgb(0xE5, 0x48, 0x4D),
+    info: Color32::from_rgb(0x74, 0xA2, 0xF7),
 };
 
 const LIGHT: Palette = Palette {
@@ -61,6 +64,7 @@ const LIGHT: Palette = Palette {
     good: Color32::from_rgb(0x1A, 0x8A, 0x5A),
     caution: Color32::from_rgb(0xB7, 0x79, 0x0F),
     bad: Color32::from_rgb(0xCD, 0x2B, 0x31),
+    info: Color32::from_rgb(0x2F, 0x64, 0xD6),
 };
 
 pub fn palette(ui: &egui::Ui) -> Palette {
@@ -254,4 +258,77 @@ pub fn group_digits(n: u64) -> String {
         out.push(c);
     }
     out
+}
+
+/// Primary action button: accent fill when idle, neutral "Stop" while running.
+pub fn primary_button(ui: &mut egui::Ui, running: bool, idle: &str, size: egui::Vec2) -> egui::Response {
+    let p = palette(ui);
+    let (rect, resp) = ui.allocate_exact_size(size, egui::Sense::click());
+    let hovered = resp.hovered();
+    let radius = CornerRadius::same(8);
+    let (fill, stroke, fg, label) = if running {
+        let fill = if hovered { p.raised } else { p.surface };
+        (fill, Stroke::new(1.0, p.border_strong), p.text, with_icon(Icon::Square, "Stop"))
+    } else {
+        let fill = if hovered { p.accent.gamma_multiply(0.88) } else { p.accent };
+        (fill, Stroke::NONE, p.on_accent, with_icon(Icon::Play, idle))
+    };
+    let painter = ui.painter();
+    painter.rect_filled(rect, radius, fill);
+    painter.rect_stroke(rect, radius, stroke, egui::StrokeKind::Inside);
+    painter.text(rect.center(), egui::Align2::CENTER_CENTER, label, semibold(14.0), fg);
+    if hovered {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    resp
+}
+
+/// Status line with icon plus a thin progress track underneath.
+pub fn status_footer(ui: &mut egui::Ui, status: &str, error: Option<&str>, progress: f32, running: bool) {
+    let p = palette(ui);
+    ui.horizontal(|ui| {
+        let (glyph, color) = if error.is_some() {
+            (Icon::CircleAlert, p.bad)
+        } else if running {
+            (Icon::Activity, p.accent)
+        } else {
+            (Icon::CircleCheck, p.muted)
+        };
+        ui.label(egui::RichText::new(icon(glyph)).color(color));
+        ui.label(egui::RichText::new(error.unwrap_or(status)).color(if error.is_some() { p.bad } else { p.muted }));
+        if running {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(egui::RichText::new(format!("{:.0}%", progress * 100.0)).monospace().color(p.muted));
+            });
+        }
+    });
+    let (track, _) = ui.allocate_exact_size(egui::vec2(ui.available_width(), 3.0), egui::Sense::hover());
+    ui.painter().rect_filled(track, CornerRadius::same(2), p.border);
+    if progress > 0.0 {
+        let mut fill = track;
+        fill.set_width(track.width() * progress.clamp(0.0, 1.0));
+        ui.painter().rect_filled(fill, CornerRadius::same(2), p.accent);
+    }
+}
+
+/// Inline amber notice with a "Restart as admin" action.
+pub fn admin_notice(ui: &mut egui::Ui, message: &str) {
+    let p = palette(ui);
+    egui::Frame::new()
+        .fill(p.caution.gamma_multiply(0.08))
+        .stroke(Stroke::new(1.0, p.caution.gamma_multiply(0.35)))
+        .corner_radius(CornerRadius::same(8))
+        .inner_margin(Margin::symmetric(12, 8))
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(icon(Icon::ShieldAlert)).color(p.caution));
+                ui.label(egui::RichText::new(message).color(p.text));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.button("Restart as admin").clicked() && crate::sys::relaunch_as_admin() {
+                        ui.send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                });
+            });
+        });
 }

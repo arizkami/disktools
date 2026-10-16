@@ -2,17 +2,20 @@ use eframe::egui::{self, Margin, RichText, Stroke};
 
 use crate::bench_ui::BenchUi;
 use crate::info_ui::InfoUi;
+use crate::surface_ui::SurfaceUi;
 use crate::theme::{self, Icon};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Tab {
     Benchmark,
+    Surface,
     Drives,
 }
 
 pub struct DiskToolsApp {
     tab: Tab,
     bench: BenchUi,
+    surface: SurfaceUi,
     info: InfoUi,
     elevated: bool,
 }
@@ -21,13 +24,20 @@ impl DiskToolsApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         theme::install(&cc.egui_ctx);
         let elevated = crate::sys::is_elevated();
-        // `--tab drives` opens straight on the Drives tab.
+        // `--tab surface|drives` opens straight on that tab.
         let args: Vec<String> = std::env::args().collect();
         let tab = match args.windows(2).find(|w| w[0] == "--tab").map(|w| w[1].as_str()) {
+            Some("surface") => Tab::Surface,
             Some("drives" | "info") => Tab::Drives,
             _ => Tab::Benchmark,
         };
-        Self { tab, bench: BenchUi::new(), info: InfoUi::new(&cc.egui_ctx), elevated }
+        Self {
+            tab,
+            bench: BenchUi::new(),
+            surface: SurfaceUi::new(&cc.egui_ctx),
+            info: InfoUi::new(&cc.egui_ctx),
+            elevated,
+        }
     }
 }
 
@@ -52,6 +62,7 @@ impl eframe::App for DiskToolsApp {
                         &mut self.tab,
                         &[
                             (Tab::Benchmark, theme::with_icon(Icon::Gauge, "Benchmark")),
+                            (Tab::Surface, theme::with_icon(Icon::ChartLine, "Surface")),
                             (Tab::Drives, theme::with_icon(Icon::HardDrive, "Drives")),
                         ],
                     );
@@ -84,6 +95,7 @@ impl eframe::App for DiskToolsApp {
             .frame(egui::Frame::new().fill(p.bg).inner_margin(Margin::same(16)))
             .show(ui, |ui| match self.tab {
                 Tab::Benchmark => self.bench.ui(ui),
+                Tab::Surface => self.surface.ui(ui, self.elevated),
                 Tab::Drives => self.info.ui(ui, self.elevated),
             });
     }

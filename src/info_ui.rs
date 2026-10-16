@@ -155,7 +155,7 @@ impl InfoUi {
         ui.add_space(10.0);
 
         if !elevated {
-            admin_notice(ui, p);
+            theme::admin_notice(ui, "Health data needs administrator rights.");
             ui.add_space(12.0);
         }
 
@@ -285,26 +285,6 @@ impl InfoUi {
             }
         }
     }
-}
-
-fn admin_notice(ui: &mut egui::Ui, p: &Palette) {
-    egui::Frame::new()
-        .fill(p.caution.gamma_multiply(0.08))
-        .stroke(Stroke::new(1.0, p.caution.gamma_multiply(0.35)))
-        .corner_radius(CornerRadius::same(8))
-        .inner_margin(Margin::symmetric(12, 8))
-        .show(ui, |ui| {
-            ui.set_width(ui.available_width());
-            ui.horizontal(|ui| {
-                ui.label(RichText::new(theme::icon(Icon::ShieldAlert)).color(p.caution));
-                ui.label(RichText::new("Health data needs administrator rights.").color(p.text));
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("Restart as admin").clicked() && crate::sys::relaunch_as_admin() {
-                        ui.send_viewport_cmd(egui::ViewportCommand::Close);
-                    }
-                });
-            });
-        });
 }
 
 fn elided(text: &str, font: FontId, color: Color32, width: f32) -> LayoutJob {

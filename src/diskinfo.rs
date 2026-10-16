@@ -269,13 +269,22 @@ fn drive_letters() -> BTreeMap<u32, Vec<char>> {
 }
 
 pub fn enumerate() -> Vec<DiskInfo> {
+    enumerate_with(true)
+}
+
+/// Identity and size only — no S.M.A.R.T. queries. Cheap enough for pickers.
+pub fn identify_all() -> Vec<DiskInfo> {
+    enumerate_with(false)
+}
+
+fn enumerate_with(health: bool) -> Vec<DiskInfo> {
     let letters = drive_letters();
     let mut disks = Vec::new();
     for index in 0..32u32 {
         let path = format!("\\\\.\\PhysicalDrive{index}");
         let Some(query) = open_device(&path, 0) else { continue };
         // Read/write access is needed for SMART; only succeeds when elevated.
-        let rw = open_device(&path, GENERIC_READ | GENERIC_WRITE);
+        let rw = if health { open_device(&path, GENERIC_READ | GENERIC_WRITE) } else { None };
 
         let mut disk = DiskInfo {
             index,
@@ -334,6 +343,7 @@ pub fn enumerate() -> Vec<DiskInfo> {
         }
 
         match &rw {
+            None if !health => {}
             None => disk.smart_note = Some("Run as administrator to read health data".into()),
             Some(rw) => {
                 if bus_code == 0x11 {

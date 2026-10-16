@@ -2,7 +2,11 @@
 ; Installs to C:\Program Files\arizlab\disktools
 
 #ifndef AppVersion
-  #define AppVersion "0.1.0"
+  #define AppVersion "0.2.0"
+#endif
+; Folder holding disktools.exe; build.ps1 can point this elsewhere.
+#ifndef ExeDir
+  #define ExeDir "..\target\release"
 #endif
 #define AppName "DiskTools"
 #define AppPublisher "arizlab"
@@ -43,8 +47,11 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\target\release\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#ExeDir}\{#AppExe}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE-MIT"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE-APACHE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\third-party\LUCIDE-LICENSE.txt"; DestDir: "{app}\third-party"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"

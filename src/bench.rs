@@ -312,7 +312,7 @@ fn sleep_cancellable(d: Duration, stop: &AtomicBool) {
 }
 
 /// Page-aligned heap buffer, required for unbuffered I/O.
-struct AlignedBuf {
+pub(crate) struct AlignedBuf {
     ptr: *mut u8,
     layout: Layout,
 }
@@ -320,14 +320,14 @@ struct AlignedBuf {
 unsafe impl Send for AlignedBuf {}
 
 impl AlignedBuf {
-    fn new(len: usize) -> Self {
+    pub(crate) fn new(len: usize) -> Self {
         let layout = Layout::from_size_align(len.max(ALIGN), ALIGN).unwrap();
         let ptr = unsafe { alloc(layout) };
         assert!(!ptr.is_null(), "out of memory");
         Self { ptr, layout }
     }
 
-    fn as_mut_slice(&mut self) -> &mut [u8] {
+    pub(crate) fn as_mut_slice(&mut self) -> &mut [u8] {
         unsafe { std::slice::from_raw_parts_mut(self.ptr, self.layout.size()) }
     }
 
@@ -345,10 +345,10 @@ impl Drop for AlignedBuf {
 }
 
 /// xorshift64* — fast, good enough for offsets and incompressible data.
-struct Rng(u64);
+pub(crate) struct Rng(u64);
 
 impl Rng {
-    fn seeded(salt: u64) -> Self {
+    pub(crate) fn seeded(salt: u64) -> Self {
         let t = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_nanos() as u64)
@@ -356,7 +356,7 @@ impl Rng {
         Rng((t ^ salt.wrapping_mul(0x2545_F491_4F6C_DD1D)) | 1)
     }
 
-    fn next(&mut self) -> u64 {
+    pub(crate) fn next(&mut self) -> u64 {
         let mut x = self.0;
         x ^= x >> 12;
         x ^= x << 25;

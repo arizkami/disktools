@@ -1,8 +1,10 @@
 [package]
 name = "disktools"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
-description = "Disk benchmark and S.M.A.R.T. health viewer (CrystalDiskMark / CrystalDiskInfo style) built with egui"
+description = "Disk benchmark, surface tester and S.M.A.R.T. health viewer for Windows, built with egui"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/arizkami/disktools"
 
 [dependencies]
 eframe = "0.37"

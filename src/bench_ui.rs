@@ -181,12 +181,12 @@ impl BenchUi {
         ui.add_space(14.0);
         self.grid_ui(ui, &p, running);
         ui.add_space(12.0);
-        self.footer_ui(ui, &p, running);
+        self.footer_ui(ui, running);
     }
 
     fn toolbar_ui(&mut self, ui: &mut egui::Ui, p: &Palette, running: bool) {
         ui.horizontal_top(|ui| {
-            if primary_button(ui, p, running).clicked() {
+            if theme::primary_button(ui, running, "Run all", Vec2::new(128.0, 64.0)).clicked() {
                 if let Some(h) = &self.handle {
                     h.cancel();
                 } else {
@@ -328,32 +328,8 @@ impl BenchUi {
         }
     }
 
-    fn footer_ui(&mut self, ui: &mut egui::Ui, p: &Palette, running: bool) {
-        // Status line with a thin progress track.
-        ui.horizontal(|ui| {
-            let (glyph, color) = if self.error.is_some() {
-                (Icon::CircleAlert, p.bad)
-            } else if running {
-                (Icon::Activity, p.accent)
-            } else {
-                (Icon::CircleCheck, p.muted)
-            };
-            ui.label(RichText::new(theme::icon(glyph)).color(color));
-            let text = self.error.clone().unwrap_or_else(|| self.status.clone());
-            ui.label(RichText::new(text).color(if self.error.is_some() { p.bad } else { p.muted }));
-            if running {
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(RichText::new(format!("{:.0}%", self.progress * 100.0)).monospace().color(p.muted));
-                });
-            }
-        });
-        let (track, _) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 3.0), Sense::hover());
-        ui.painter().rect_filled(track, CornerRadius::same(2), p.border);
-        if self.progress > 0.0 {
-            let mut fill = track;
-            fill.set_width(track.width() * self.progress.clamp(0.0, 1.0));
-            ui.painter().rect_filled(fill, CornerRadius::same(2), p.accent);
-        }
+    fn footer_ui(&mut self, ui: &mut egui::Ui, running: bool) {
+        theme::status_footer(ui, &self.status, self.error.as_deref(), self.progress, running);
         ui.add_space(6.0);
 
         ui.horizontal(|ui| {
@@ -417,28 +393,6 @@ impl BenchUi {
         }
         s
     }
-}
-
-/// Run / Stop button spanning both settings rows.
-fn primary_button(ui: &mut egui::Ui, p: &Palette, running: bool) -> egui::Response {
-    let (rect, resp) = ui.allocate_exact_size(Vec2::new(128.0, 64.0), Sense::click());
-    let hovered = resp.hovered();
-    let radius = CornerRadius::same(8);
-    let (fill, stroke, fg, label) = if running {
-        let fill = if hovered { p.raised } else { p.surface };
-        (fill, Stroke::new(1.0, p.border_strong), p.text, theme::with_icon(Icon::Square, "Stop"))
-    } else {
-        let fill = if hovered { p.accent.gamma_multiply(0.88) } else { p.accent };
-        (fill, Stroke::NONE, p.on_accent, theme::with_icon(Icon::Play, "Run all"))
-    };
-    let painter = ui.painter();
-    painter.rect_filled(rect, radius, fill);
-    painter.rect_stroke(rect, radius, stroke, StrokeKind::Inside);
-    painter.text(rect.center(), Align2::CENTER_CENTER, label, theme::semibold(14.0), fg);
-    if hovered {
-        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
-    }
-    resp
 }
 
 fn test_label(ui: &mut egui::Ui, p: &Palette, rect: Rect, spec: &TestSpec, row: usize, enabled: bool) -> egui::Response {

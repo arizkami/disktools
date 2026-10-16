@@ -1,5 +1,8 @@
 # Builds the release exe and the Inno Setup installer into dist\.
-# Usage: pwsh installer\build.ps1
+# Usage: pwsh installer\build.ps1 [-TargetDir <cargo target dir>]
+# Use -TargetDir when target\release\disktools.exe is locked by a running copy.
+
+param([string]$TargetDir = 'target')
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
@@ -15,11 +18,12 @@ try {
     if (-not $iscc) { throw 'ISCC.exe not found. Install Inno Setup 6 or set $env:ISCC.' }
 
     Write-Host "Building DiskTools $version (release)..."
-    cargo build --release
+    cargo build --release --target-dir $TargetDir
     if ($LASTEXITCODE -ne 0) { throw 'cargo build failed' }
+    $exeDir = (Resolve-Path (Join-Path $TargetDir 'release')).Path
 
     Write-Host "Compiling installer with $iscc"
-    & $iscc /Qp "/DAppVersion=$version" installer\disktools.iss
+    & $iscc /Qp "/DAppVersion=$version" "/DExeDir=$exeDir" installer\disktools.iss
     if ($LASTEXITCODE -ne 0) { throw 'ISCC failed' }
 
     Get-Item "dist\disktools-$version-setup-x64.exe"
