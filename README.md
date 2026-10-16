@@ -25,7 +25,19 @@ Health data requires administrator rights — use the **Restart as administrator
 ## Build & run
 
 ```bash
-cargo run --release
+cargo run
 ```
+
+Release builds embed a manifest that **requires administrator** (UAC prompt on launch); debug and test builds run as the current user.
+
+## Installer
+
+Requires [Inno Setup 6](https://jrsoftware.org/isinfo.php). The script looks for `ISCC.exe` in `%LOCALAPPDATA%\Programs\Inno Setup 6\`, then `%LOCALAPPDATA%\InnoSetup\` (override with `$env:ISCC`).
+
+```bash
+pwsh installer/build.ps1
+```
+
+Output: `dist/disktools-<version>-setup-x64.exe`, which installs to `C:\Program Files\arizlab\disktools` with a Start menu shortcut (desktop shortcut optional).
 
 The test file is written to `<drive>:\DiskToolsBench.tmp\` and deleted when the benchmark ends.
